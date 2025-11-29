@@ -1,82 +1,106 @@
 import streamlit as st
 import math
 
-# 페이지 기본 설정
-st.set_page_config(page_title="나만의 똑똑한 계산기", page_icon="🧮")
+# 1. Page Configuration
+st.set_page_config(page_title="Smart Calculator", page_icon="🧮")
 
-# 제목 및 설명
-st.title("🧮 다기능 웹 계산기")
-st.markdown("사칙연산, 나머지, 거듭제곱, 로그 계산을 지원합니다.")
+# 2. Title
+st.title("🧮 Smart Calculator")
+st.markdown("Select an operation first, and the input fields will adapt automatically.")
 
-# 사이드바: 연산 모드 선택
-st.sidebar.header("연산 설정")
-operation = st.sidebar.selectbox(
-    "어떤 연산을 하시겠습니까?",
-    ("덧셈 (+)", "뺄셈 (-)", "곱셈 (*)", "나눗셈 (/)", 
-     "나머지 연산 (%)", "거듭제곱 (^)", "로그 (log)")
+# 3. Step 1: Select Operation (This determines the input labels)
+st.divider()
+st.header("Step 1: Select Operation")
+
+operation = st.selectbox(
+    "Choose the math operation you want to perform:",
+    ("Addition (+)", "Subtraction (-)", "Multiplication (*)", "Division (/)", 
+     "Modulo (%)", "Power (^)", "Logarithm (log)")
 )
 
-# 메인 화면: 숫자 입력 (2개의 컬럼으로 나누어 배치)
+# 4. Logic to determine Input Labels based on the selection
+# 연산 종류에 따라 입력창의 제목(label)을 다르게 설정합니다.
+if "Power" in operation:
+    label1 = "Base (Bottom number)"
+    label2 = "Exponent (Power)"
+    help_text = "Calculates Base to the power of Exponent."
+elif "Logarithm" in operation:
+    label1 = "Value (Antilogarithm)"
+    label2 = "Base"
+    help_text = "Calculates the logarithm of the Value with the given Base."
+elif "Division" in operation or "Modulo" in operation:
+    label1 = "Dividend (Number to be divided)"
+    label2 = "Divisor (Number to divide by)"
+    help_text = "Performs division or remainder calculation."
+else:
+    # Default for Addition, Subtraction, Multiplication
+    label1 = "First Number"
+    label2 = "Second Number"
+    help_text = "Performs basic arithmetic."
+
+# 5. Step 2: Input Numbers (Labels update dynamically)
+st.header("Step 2: Enter Numbers")
+st.info(f"Current Mode: {help_text}") # Shows a helpful tip based on selection
+
 col1, col2 = st.columns(2)
 
 with col1:
-    num1 = st.number_input("첫 번째 숫자 (또는 진수)", value=0.0, format="%f")
+    num1 = st.number_input(label1, value=0.0, format="%f")
 
 with col2:
-    num2 = st.number_input("두 번째 숫자 (또는 밑)", value=0.0, format="%f")
+    num2 = st.number_input(label2, value=0.0, format="%f")
 
-# 계산 실행 버튼
-if st.button("계산하기"):
+# 6. Step 3: Calculate
+st.divider()
+if st.button("Calculate Result"):
     result = None
     error = None
+    symbol = ""
 
-    # 연산 로직
-    if "덧셈" in operation:
+    # Calculation Logic
+    if "Addition" in operation:
         result = num1 + num2
         symbol = "+"
-    elif "뺄셈" in operation:
+    elif "Subtraction" in operation:
         result = num1 - num2
         symbol = "-"
-    elif "곱셈" in operation:
+    elif "Multiplication" in operation:
         result = num1 * num2
         symbol = "×"
-    elif "나눗셈" in operation:
+    elif "Division" in operation:
         if num2 == 0:
-            error = "0으로 나눌 수 없습니다."
+            error = "Cannot divide by zero."
         else:
             result = num1 / num2
             symbol = "÷"
-    elif "나머지" in operation:
+    elif "Modulo" in operation:
         if num2 == 0:
-            error = "0으로 나눌 수 없습니다."
+            error = "Cannot divide by zero."
         else:
             result = num1 % num2
             symbol = "%"
-    elif "거듭제곱" in operation:
+    elif "Power" in operation:
         result = num1 ** num2
         symbol = "^"
-    elif "로그" in operation:
-        # 로그의 밑 조건(1이 아닌 양수)과 진수 조건(양수) 확인
+    elif "Logarithm" in operation:
         if num1 <= 0:
-            error = "진수(첫 번째 숫자)는 0보다 커야 합니다."
+            error = "Value must be positive for Logarithm."
         elif num2 <= 0 or num2 == 1:
-            error = "밑(두 번째 숫자)은 1이 아닌 양수여야 합니다."
+            error = "Base must be positive and not 1."
         else:
             result = math.log(num1, num2)
             symbol = "log"
 
-    # 결과 출력
-    st.divider() # 구분선
+    # Display Output
     if error:
-        st.error(f"오류 발생: {error}")
+        st.error(f"Error: {error}")
     else:
-        # 로그는 수식 표현이 조금 다르므로 별도 처리
-        if "로그" in operation:
-            st.success(f"계산 결과: {result}")
+        st.success(f"Result: {result}")
+        
+        # Display Equation cleanly
+        if "Logarithm" in operation:
             st.latex(f"\\log_{{{num2}}} ({num1}) = {result}")
+        elif "Power" in operation:
+             st.latex(f"{num1}^{{{num2}}} = {result}")
         else:
-            st.success(f"계산 결과: {result}")
-            # 수식 예쁘게 보여주기 (LaTeX 활용)
-            st.info(f"수식: {num1} {symbol} {num2} = {result}")
-
-      
+            st.info(f"Equation: {num1} {symbol} {num2} = {result}")
